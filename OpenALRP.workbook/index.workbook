@@ -1,0 +1,45 @@
+---
+uti: com.xamarin.workbook
+platforms:
+- Console
+---
+
+```csharp
+#r "System.Net.Http"
+#r "openalpr-net.dll"
+using openalprnet;
+using System.IO;
+using Xamarin.Interactive.Representations;
+using System.Net.Http;
+```
+
+OpenALPR is an open source Automatic License Plate Recognition library written in C++ with bindings in C#. The library analyzes images and video streams to identify license plates. The output is the text representation of any license plate characters. [https://github.com/openalpr/openalpr](https://github.com/openalpr/openalpr "https://github.com/openalpr/openalpr")
+
+```csharp
+string country = "us"; // or "eu"
+var alpr = new AlprNet(country, configFile:"openalpr.conf", runtimeDir:"runtime_data");
+bool loaded = alpr.IsLoaded();
+```
+
+Let’s load some random image from the Internet using HttpClient:
+
+```csharp
+var client = new HttpClient();
+var imageBytes = await client.GetByteArrayAsync("https://a.d-cd.net/81ac2bcs-960.jpg");
+var wbImage = new Image(ImageFormat.Jpeg, imageBytes, 500, 1, 1);
+```
+
+Recognize all plates:
+
+```csharp
+var result = alpr.Recognize(imageBytes);
+result.Plates
+    .SelectMany(i => i.TopNPlates.Take(5))
+    .Select(i => $"{i.Characters}  ({i.OverallConfidence:F1}%)");
+```
+
+Plate's coordinates:
+
+```csharp
+var region = result?.Plates?.FirstOrDefault()?.PlatePoints;
+```
